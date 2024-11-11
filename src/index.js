@@ -1,29 +1,26 @@
 const express = require('express');
 const app = express();
+const bodyParser = require('body-parser');
+const { viewController } = require('./controller/viewController');
+const { userController } = require('./controller/userController');
 
-app.use('views engine', 'ejs');
+app.set('views engine', 'ejs');
+app.use(bodyParser.urlencoded({extended:true}));
 
 //ROUTE
-app.get('/', (req, res) => {
-    res.send("Halaman Home")
-})
-app.get('/login', (req, res) => {
-    res.send("Halaman Login")
+app.get('/', viewController.homePage)
+app.get('/login', viewController.loginPage)
+app.get('/register', viewController.registerPage)
+app.get('/admin', viewController.adminPage)
+
+app.get('/logout', (req, res) => {
+    res.send("Logout User")
 })
 app.post('/login', (req, res) => {
     res.send("User Login")
 })
-app.get('/register', (req, res) => {
-    res.send("Halaman Register")
-})
 app.post('/register', (req, res) => {
     res.send("User Register")
-})
-app.get('/logout', (req, res) => {
-    res.send("Logout User")
-})
-app.get('/admin', (req, res) => {
-    res.send("Halaman bagi yang sudah login")
 })
 
 app.listen(3000, () => {
