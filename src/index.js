@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const { viewController } = require('./controller/viewController');
 const { userController } = require('./controller/userController');
 
-app.set('views engine', 'ejs');
+app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended:true}));
 
 //ROUTE
