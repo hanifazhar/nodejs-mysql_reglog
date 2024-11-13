@@ -1,4 +1,4 @@
-viewController = {
+const viewController = {
     homePage: (req, res) => {
         res.render('home')
     },

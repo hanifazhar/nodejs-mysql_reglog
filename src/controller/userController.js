@@ -1,62 +1,68 @@
 const bcrypt = require('bcrypt');
-const { connection } = require('../database/db');
-const session = require('express-session');
+const { connection } = require('../database/database.js');
 
-const UserController = {
-
-    register: async (req,res)=>{
-        
-        //mengambil data dari form
+const userController = {
+    register: async (req, res) => {
         const fullname = req.body.fullname;
-        const username = req.body.username;
-        const password = req.body.password
-        console.log(password)
-        const hashPassword = await bcrypt.hash(password,10); //password akan di hash supaya kata asli tidak terlihat didalam database sehingga lebih aman
-
-        //memasukan data kedalam database tabel user
-        connection.query(
-            `INSERT INTO users (fullName, username, password) VALUES('${fullname}','${username}','${hashPassword}')`,(err,result)=>{
-                if(err)throw err //jika error maka akan mengembalikan error
-
-                res.redirect('/login') //jika berhasil akan di alihkan kehalaman login
-            }
-        )
-
-
-    },
-
-    login: (req,res)=>{
-        
-        //mengambil data dari form login
         const username = req.body.username;
         const password = req.body.password;
 
+        const hashPassword = await bcrypt.hash(password, 10);
+        console.log("Hash password saat registrasi:", hashPassword);
+
         connection.query(
-            `SELECT username, password From users WHERE username = '${username}'`, async (err,result)=>{
-                if(err) throw res.send(err)
-
-                
-                // cek apakah username ada di database atau tidak
-                if(result.length > 0){
-
-                    //mencocokan password dari form dengan data password di database
-                    const verifyPass = await bcrypt.compare(password, hashPass);
-                    if(verifyPass){
-
-                        req.session.login = true; //session login bernilai true setiap login berhasil
-                        return res.redirect('/admin') //jika benar maka akan di alihkan ke halaman admin
-                    }    
-            } return res.redirect('/login') //jika salah username / password maka akan di kembalikan ke halaman login
-        })
+            `INSERT INTO users (fullName, username, password) VALUES(?, ?, ?)`,
+            [fullname, username, hashPassword],
+            (err, result) => {
+                if (err) throw err;
+                res.redirect('/login');
+            }
+        );
     },
 
-    logout: (req,res)=>{
-        req.session.destory((err)=>{
+    login: (req, res) => {
+        const username = req.body.username;
+        const password = req.body.password;
+    
+        connection.query(
+            'SELECT password FROM users WHERE username = ?',
+            [username],
+            async (err, result) => {
+                if (err) return res.status(500).send(err.message);
+    
+                if (result.length > 0) {
+                    const hashPassword = result[0].password;
+    
+                    try {
+                        console.log("Password dari input:", password);
+                        console.log("Hash password dari DB:", hashPassword);
+    
+                        const verifyPass = await bcrypt.compare(password, hashPassword);
+                        console.log("Hasil verifikasi password:", verifyPass);
+    
+                        if (verifyPass) {
+                            req.session.login = true;
+                            return res.redirect('/admin'); // Pastikan 'return' ini mencegah kode selanjutnya dijalankan
+                        } else {
+                            return res.status(401).send('Login gagal: password salah.');
+                        }
+                    } catch (error) {
+                        console.error("Error saat verifikasi password:", error); // Tambahkan log untuk melihat error
+                        return res.status(500).send('Error verifying password');
+                    }
+                } else {
+                    return res.status(401).send('Login gagal: username tidak ditemukan.');
+                }
+            }
+        );
+    },    
+
+    logout: (req, res) => {
+        req.session.destroy((err)=>{
             if(err) console.log(err);
             res.redirect('/login')
         })
     }
+};
 
-}
-
-module.exports = {UserController}
+module.exports = { userController };
